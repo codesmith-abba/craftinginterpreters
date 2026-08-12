@@ -7,6 +7,7 @@ import com.craftinginterpreters.lox.Lox;
 class Interpreter implements Expr.Visitor<Object>,
         Stmt.Visitor<Void> {
     private Environment environment = new Environment();
+    private static final Object UNINITIALIZED = new Object();
 
     void interpret(List<Stmt> statements) {
         try {
@@ -45,6 +46,10 @@ class Interpreter implements Expr.Visitor<Object>,
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    Object evaluateExpression(Expr expr) {
+        return evaluate(expr);
     }
 
     private void execute(Stmt stmt) {
@@ -96,7 +101,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
-        Object value = null;
+        Object value = UNINITIALIZED;
         if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
         }
@@ -185,7 +190,14 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return environment.get(expr.name);
+        Object value = environment.get(expr.name);
+
+        if (value == UNINITIALIZED) {
+            throw new RuntimeError(
+                    expr.name,
+                    "Variable '" + expr.name.lexeme + "' has not been initialized.");
+        }
+        return value;
     }
 
     private void checkNumberOperand(Token operator, Object operand) {

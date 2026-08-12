@@ -58,7 +58,16 @@ public class Lox {
     if (hadError)
       return;
 
-    interpreter.interpret(statements);
+    for (Stmt statement : statements) {
+      if (statement instanceof Stmt.Expression) {
+        Object value = interpreter.evaluateExpression(
+            ((Stmt.Expression) statement).expression);
+
+        System.out.println(value);
+      } else {
+        interpreter.interpret(List.of(statement));
+      }
+    }
   }
 
   static void error(int line, String message) {
